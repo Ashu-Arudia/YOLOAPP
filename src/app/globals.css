@@ -1,26 +1,89 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ── Design Tokens ───────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-base:     #090d1a;
+  --color-bg-surface:  #0f1629;
+  --color-bg-elevated: #1a2035;
+  --color-bg-card:     #141c2e;
+
+  --color-border:      #1e2d4a;
+  --color-border-dim:  #162038;
+
+  --color-accent-blue:  #3b82f6;
+  --color-accent-cyan:  #06b6d4;
+  --color-accent-green: #10b981;
+  --color-accent-amber: #f59e0b;
+
+  --color-team-a:     #ef4444;
+  --color-team-b:     #3b82f6;
+
+  --color-text-primary:   #e2e8f0;
+  --color-text-secondary: #7c91b5;
+  --color-text-muted:     #3d5070;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg-surface); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-blue); }
+
+/* ── Utility classes ───────────────────────────────────────────── */
+.glass {
+  background: rgba(15, 22, 41, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
 }
+
+.glow-blue  { box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+.glow-green { box-shadow: 0 0 20px rgba(16,185,129,0.2); }
+.glow-red   { box-shadow: 0 0 20px rgba(239,68,68,0.2);  }
+
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Status badge colours */
+.badge-pending    { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+.badge-processing { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+.badge-completed  { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+.badge-stopped    { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3);  }
+
+/* Animate in */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.fade-up { animation: fadeUp 0.4s ease both; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin-slow { animation: spin-slow 3s linear infinite; }

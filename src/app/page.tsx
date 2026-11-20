@@ -1,69 +1,186 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useRouter } from "next/navigation";
+import {
+  Trophy,
+  Play,
+  CheckCircle2,
+  Clock,
+  Upload,
+  Video,
+} from "lucide-react";
+import { useMatches } from "@/hooks/useMatches";
+import StatsCard from "@/components/analytics/StatsCard";
+import StatusBadge from "@/components/common/StatusBadge";
+import { useState } from "react";
+import UploadModal from "@/components/match/UploadModal";
+import { api } from "@/lib/api";
+
+export default function DashboardPage() {
+  const { matches, isLoading } = useMatches();
+  const router = useRouter();
+  const [showUpload, setShowUpload] = useState(false);
+
+  const activeCount = matches.filter((m) => m.status === "processing").length;
+  const completedCount = matches.filter((m) => m.status === "completed").length;
+
+  // Average duration for completed matches (in minutes)
+  const avgDuration = (() => {
+    const finished = matches.filter(
+      (m) => m.status === "completed" && m.started_at && m.ended_at
+    );
+    if (finished.length === 0) return "—";
+    const totalMs = finished.reduce((acc, m) => {
+      return (
+        acc +
+        (new Date(m.ended_at!).getTime() - new Date(m.started_at!).getTime())
+      );
+    }, 0);
+    const avgMin = totalMs / finished.length / 60000;
+    return `${avgMin.toFixed(1)}m`;
+  })();
+
+  const recentMatches = [...matches]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    .slice(0, 5);
+
+  const handleStartWebcam = async () => {
+    try {
+      const match = await api.createMatch("Live Webcam", "webcam");
+      router.push(`/matches/${match.id}`);
+    } catch {
+      // silently fail
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
+        <p className="text-sm text-text-secondary mt-1">
+          Real-time football intelligence overview
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          label="Total Matches"
+          value={matches.length}
+          icon={Trophy}
+          color="blue"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <StatsCard
+          label="Active Now"
+          value={activeCount}
+          icon={Play}
+          color="green"
+        />
+        <StatsCard
+          label="Completed"
+          value={completedCount}
+          icon={CheckCircle2}
+          color="cyan"
+        />
+        <StatsCard
+          label="Average Duration"
+          value={avgDuration}
+          icon={Clock}
+          color="amber"
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          onClick={() => setShowUpload(true)}
+          className="glass rounded-xl p-5 flex items-center gap-4 hover:bg-bg-elevated/80 transition-colors text-left group"
+        >
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent-blue/15 text-accent-blue group-hover:bg-accent-blue/25 transition-colors">
+            <Upload className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text-primary">
+              Upload Video
+            </p>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Analyze a recorded match
+            </p>
+          </div>
+        </button>
+        <button
+          onClick={handleStartWebcam}
+          className="glass rounded-xl p-5 flex items-center gap-4 hover:bg-bg-elevated/80 transition-colors text-left group"
+        >
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent-green/15 text-accent-green group-hover:bg-accent-green/25 transition-colors">
+            <Video className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text-primary">
+              Start Webcam
+            </p>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Live match analysis
+            </p>
+          </div>
+        </button>
+      </div>
+
+      {/* Recent Matches */}
+      <div className="glass rounded-xl fade-up">
+        <div className="px-5 py-4 border-b border-border-dim">
+          <h2 className="text-sm font-semibold text-text-primary">
+            Recent Matches
+          </h2>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        {isLoading ? (
+          <div className="px-5 py-8 text-center text-text-muted text-sm">
+            Loading…
+          </div>
+        ) : recentMatches.length === 0 ? (
+          <div className="px-5 py-8 text-center text-text-muted text-sm">
+            No matches yet. Upload a video or start a webcam session.
+          </div>
+        ) : (
+          <div className="divide-y divide-border-dim">
+            {recentMatches.map((match) => (
+              <button
+                key={match.id}
+                onClick={() => router.push(`/matches/${match.id}`)}
+                className="flex items-center justify-between w-full px-5 py-3.5 hover:bg-bg-elevated/50 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-bg-elevated text-text-muted">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">
+                      {match.name}
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {new Date(match.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <StatusBadge status={match.status} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showUpload && (
+        <UploadModal
+          onClose={() => setShowUpload(false)}
+          onUploaded={(matchId) => {
+            setShowUpload(false);
+            router.push(`/matches/${matchId}`);
+          }}
+        />
+      )}
     </div>
   );
 }
